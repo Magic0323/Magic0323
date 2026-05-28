@@ -14,8 +14,12 @@ jobs:
         with:
           github_user_name: Magic0323
           outputs: |
-            dist/github-contribution-grid-snake.gif?delay=100
-            dist/github-contribution-grid-snake-dark.gif?palette=github-dark&delay=100
+            dist/github-contribution-grid-snake.gif
+            dist/github-contribution-grid-snake-dark.gif?palette=github-dark
+      - run: |
+          sudo apt-get install -y gifsicle
+          gifsicle -i dist/github-contribution-grid-snake.gif --delay 15 -o dist/github-contribution-grid-snake.gif
+          gifsicle -i dist/github-contribution-grid-snake-dark.gif --delay 15 -o dist/github-contribution-grid-snake-dark.gif
       - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
