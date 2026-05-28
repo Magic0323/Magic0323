@@ -14,8 +14,8 @@ jobs:
         with:
           github_user_name: Magic0323
           outputs: |
-            dist/github-contribution-grid-snake.gif
-            dist/github-contribution-grid-snake-dark.gif?palette=github-dark
+            dist/github-contribution-grid-snake.gif?delay=100
+            dist/github-contribution-grid-snake-dark.gif?palette=github-dark&delay=100
       - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
