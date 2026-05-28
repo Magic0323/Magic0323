@@ -1,0 +1,64 @@
+name: Update Blog Posts
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch Juejin articles
+        run: |
+          curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" \
+            -H "Content-Type: application/json" \
+            -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' > juejin.json
+          python3 << 'PYEOF'
+import json, os
+
+with open('juejin.json') as f:
+    data = json.load(f)
+
+articles = data.get('data', [])
+
+lines = []
+for a in articles:
+    info = a.get('article_info', {})
+    title = info.get('title', '')
+    article_id = info.get('article_id', '')
+    url = f'https://juejin.cn/post/{article_id}'
+    # Get user info for tag
+    tags = a.get('tags', [])
+    tag_str = ''
+    for t in tags[:2]:
+        tag_str += f'`{t.get("tag_name","")}` '
+    lines.append(f'- [{title}]({url}) {tag_str}')
+
+if not lines:
+    lines.append('暂无文章')
+
+blog_section = '<!-- BLOG-POST-LIST:START -->\n' + '\n'.join(lines) + '\n<!-- BLOG-POST-LIST:END -->'
+
+with open('README.md') as f:
+    readme = f.read()
+
+import re
+new_readme = re.sub(
+    r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->',
+    blog_section,
+    readme,
+    flags=re.DOTALL
+)
+
+with open('README.md', 'w') as f:
+    f.write(new_readme)
+
+print(f'Updated with {len(lines)} articles')
+PYEOF
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update blog posts"

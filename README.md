@@ -69,10 +69,17 @@ const magic = {
 
 ---
 
+## 📝 Latest Blog Posts
+
+<!-- BLOG-POST-LIST:START -->
+*Loading...*
+<!-- BLOG-POST-LIST:END -->
+
+---
+
 ## 🔄 Recent Activity
 
 <!--START_SECTION:activity-->
-*Coming soon...*
 <!--END_SECTION:activity-->
 
 ---
