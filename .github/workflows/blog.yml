@@ -3,48 +3,39 @@ name: Update Blog Posts
 on:
   push:
     branches: [ main ]
-  schedule:
-    - cron: "0 */6 * * *"
-  workflow_dispatch:
 
 jobs:
   update-readme:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update blog posts
+      - name: Test step
+        run: echo "Hello world" && cat README.md | head -5
+      - name: Fetch and update
         run: |
-          # Fetch articles from Juejin
-          curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" \
+          echo "=== Fetching ==="
+          RESULT=$(curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" \
             -H "Content-Type: application/json" \
-            -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' | \
-          python3 -c "
-import json, sys, re
-data = json.load(sys.stdin)
-articles = data.get('data', [])
-lines = []
-for a in articles:
-    info = a.get('article_info', {})
-    title = info.get('title', '')
-    url = f\"https://juejin.cn/post/{info.get('article_id','')}\"
-    tags = ''.join(f' \`{t[\"tag_name\"]}\`' for t in a.get('tags',[])[:2])
-    lines.append(f'- [{title}]({url}){tags}')
-content = '\n'.join(lines) if lines else '*暂无文章*'
-with open('README.md') as f:
-    readme = f.read()
-new = re.sub(r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->',
-             f'<!-- BLOG-POST-LIST:START -->\\n{content}\\n<!-- BLOG-POST-LIST:END -->',
-             readme, flags=re.DOTALL)
-with open('README.md', 'w') as f:
-    f.write(new)
-print(f'Updated with {len(lines)} articles')
+            -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}')
+          echo "$RESULT" | python3 -c "
+import json,sys,re
+d=json.load(sys.stdin)
+a=d.get('data',[])
+print(len(a),'articles found')
+lines=[]
+for x in a:
+  i=x['article_info']
+  t=i['title']
+  u=f\"https://juejin.cn/post/{i['article_id']}\"
+  lines.append(f'- [{t}]({u})')
+c='\n'.join(lines)
+r=open('README.md').read()
+r=re.sub(r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->',
+  '<!-- BLOG-POST-LIST:START -->\n'+c+'\n<!-- BLOG-POST-LIST:END -->',r,flags=re.DOTALL)
+open('README.md','w').write(r)
+print('README updated')
 "
-      - name: Commit and push
+      - name: Commit
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          git diff --cached --quiet && echo "No changes" && exit 0
-          git commit -m "Update blog posts"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git push
+          git config user.name "bot" && git config user.email "bot@bot.com"
+          git add README.md && git diff --cached --quiet && echo "No changes" || (git commit -m "Update blog posts" && git push)
