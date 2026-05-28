@@ -1,8 +1,6 @@
 name: Generate Snake Animation
 
 on:
-  schedule:
-    - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
@@ -18,7 +16,7 @@ jobs:
             dist/github-contribution-grid-snake-dark.gif?palette=github-dark
       - name: Fix GIF speed
         run: |
-          pip install pillow -q
+          python3 -m pip install pillow -q
           python3 -c "
 from PIL import Image
 import glob, os
@@ -32,11 +30,10 @@ for path in glob.glob('dist/*.gif'):
     except EOFError:
         pass
     if len(frames) > 1:
-        frames[0].save(path, save_all=True, append_images=frames[1:],
-                       loop=0, duration=300)
-        print(f'{os.path.basename(path)}: {len(frames)} frames @ 300ms')
+        frames[0].save(path, save_all=True, append_images=frames[1:], loop=0, duration=300)
+        print('OK:', os.path.basename(path), len(frames), 'frames')
     else:
-        print(f'{os.path.basename(path)}: only 1 frame, cannot animate')
+        print('FAIL:', os.path.basename(path), 'only 1 frame')
 "
       - uses: peaceiris/actions-gh-pages@v3
         with:
