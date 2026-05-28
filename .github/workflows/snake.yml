@@ -18,8 +18,26 @@ jobs:
             dist/github-contribution-grid-snake-dark.gif?palette=github-dark
       - name: Fix GIF speed
         run: |
-          convert -delay 30 dist/github-contribution-grid-snake.gif dist/github-contribution-grid-snake.gif
-          convert -delay 30 dist/github-contribution-grid-snake-dark.gif dist/github-contribution-grid-snake-dark.gif
+          pip install pillow -q
+          python3 -c "
+from PIL import Image
+import glob, os
+for path in glob.glob('dist/*.gif'):
+    img = Image.open(path)
+    frames = []
+    try:
+        while True:
+            frames.append(img.copy())
+            img.seek(img.tell() + 1)
+    except EOFError:
+        pass
+    if len(frames) > 1:
+        frames[0].save(path, save_all=True, append_images=frames[1:],
+                       loop=0, duration=300)
+        print(f'{os.path.basename(path)}: {len(frames)} frames @ 300ms')
+    else:
+        print(f'{os.path.basename(path)}: only 1 frame, cannot animate')
+"
       - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
