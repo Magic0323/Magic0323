@@ -5,37 +5,8 @@ on:
     branches: [ main ]
 
 jobs:
-  update-readme:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Test step
-        run: echo "Hello world" && cat README.md | head -5
-      - name: Fetch and update
-        run: |
-          echo "=== Fetching ==="
-          RESULT=$(curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" \
-            -H "Content-Type: application/json" \
-            -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}')
-          echo "$RESULT" | python3 -c "
-import json,sys,re
-d=json.load(sys.stdin)
-a=d.get('data',[])
-print(len(a),'articles found')
-lines=[]
-for x in a:
-  i=x['article_info']
-  t=i['title']
-  u=f\"https://juejin.cn/post/{i['article_id']}\"
-  lines.append(f'- [{t}]({u})')
-c='\n'.join(lines)
-r=open('README.md').read()
-r=re.sub(r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->',
-  '<!-- BLOG-POST-LIST:START -->\n'+c+'\n<!-- BLOG-POST-LIST:END -->',r,flags=re.DOTALL)
-open('README.md','w').write(r)
-print('README updated')
-"
-      - name: Commit
-        run: |
-          git config user.name "bot" && git config user.email "bot@bot.com"
-          git add README.md && git diff --cached --quiet && echo "No changes" || (git commit -m "Update blog posts" && git push)
+      - run: echo "This workflow works!"
