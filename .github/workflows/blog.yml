@@ -3,8 +3,6 @@ name: Update Blog Posts
 on:
   push:
     branches: [ main ]
-  schedule:
-    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -13,46 +11,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Fetch posts from Juejin
-        run: |
-          curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" \
-            -H "Content-Type: application/json" \
-            -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' \
-            -o juejin.json
+        run: curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" -H "Content-Type: application/json" -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' -o juejin.json
       - name: Update README
+        shell: python3
         run: |
-          python3 << 'PYEOF'
-import json, re
-with open('juejin.json') as f:
-    data = json.load(f)
-
-articles = data.get('data', [])
-lines = []
-for a in articles:
-    i = a['article_info']
-    t = i['title']
-    u = f"https://juejin.cn/post/{i['article_id']}"
-    tags = a.get('tags', [])
-    tag_str = ''.join(f' ![ ](https://img.shields.io/badge/{x["tag_name"]}-gray)'
-                      for x in tags[:2])
-    lines.append(f'- [{t}]({u}){tag_str}')
-
-content = '\n'.join(lines) if lines else '*暂无文章*'
-new_section = f'<!-- BLOG-POST-LIST:START -->\n{content}\n<!-- BLOG-POST-LIST:END -->'
-
-with open('README.md') as f:
-    readme = f.read()
-
-if '<!-- BLOG-POST-LIST:START -->' in readme:
-    new_readme = re.sub(
-        r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->',
-        new_section, readme, flags=re.DOTALL)
-    with open('README.md', 'w') as f:
-        f.write(new_readme)
-    print(f'OK: {len(lines)} articles updated')
-else:
-    print('ERROR: markers not found')
-    exit(1)
-PYEOF
+          import json, re
+          with open('juejin.json') as f:
+              data = json.load(f)
+          articles = data.get('data', [])
+          lines = []
+          for a in articles:
+              i = a['article_info']
+              t = i['title']
+              u = f"https://juejin.cn/post/{i['article_id']}"
+              lines.append(f'- [{t}]({u})')
+          content = '\n'.join(lines) if lines else '*暂无文章*'
+          with open('README.md') as f:
+              readme = f.read()
+          if '<!-- BLOG-POST-LIST:START -->' in readme:
+              import re as re2
+              new = re2.sub(r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->',
+                  f'<!-- BLOG-POST-LIST:START -->\n{content}\n<!-- BLOG-POST-LIST:END -->',
+                  readme, flags=re2.DOTALL)
+              with open('README.md', 'w') as f:
+                  f.write(new)
+              print(f'OK: {len(lines)} articles')
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
