@@ -10,12 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Platane/snk@v3
+      - uses: Platane/snk@v2
         with:
           github_user_name: Magic0323
-          outputs: |
-            dist/github-contribution-grid-snake.gif?duration=40
-            dist/github-contribution-grid-snake-dark.gif?palette=github-dark&duration=40
+          gif_out_path: dist/github-contribution-grid-snake.gif
+          svg_out_path: dist/github-contribution-grid-snake.svg
+      - uses: Platane/snk@v2
+        with:
+          github_user_name: Magic0323
+          gif_out_path: dist/github-contribution-grid-snake-dark.gif
+          svg_out_path: dist/github-contribution-grid-snake-dark.svg
+          color_dark: "#1a1b27"
+          color_light: "#ebedf0"
+          color_snake: "#7c3aed"
       - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
