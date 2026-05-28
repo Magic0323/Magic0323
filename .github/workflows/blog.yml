@@ -7,66 +7,44 @@ on:
     - cron: "0 */6 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   update-readme:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch and update Juejin articles
+      - name: Update blog posts
         run: |
-          echo "Fetching articles from Juejin..."
+          # Fetch articles from Juejin
           curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" \
             -H "Content-Type: application/json" \
-            -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' > juejin.json
-          echo "API response:"
-          cat juejin.json
-          python3 << 'PYEOF'
-import json, re, os
-
-with open('juejin.json') as f:
-    data = json.load(f)
-
+            -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' | \
+          python3 -c "
+import json, sys, re
+data = json.load(sys.stdin)
 articles = data.get('data', [])
-print(f"Found {len(articles)} articles")
-
 lines = []
 for a in articles:
     info = a.get('article_info', {})
     title = info.get('title', '')
-    article_id = info.get('article_id', '')
-    url = f'https://juejin.cn/post/{article_id}'
-    tags = a.get('tags', [])
-    tag_str = ''.join(f' `{t.get("tag_name","")}`' for t in tags[:2])
-    lines.append(f'- [{title}]({url}){tag_str}')
-
-blog_content = '\n'.join(lines) if lines else '*暂无文章*'
-
+    url = f\"https://juejin.cn/post/{info.get('article_id','')}\"
+    tags = ''.join(f' \`{t[\"tag_name\"]}\`' for t in a.get('tags',[])[:2])
+    lines.append(f'- [{title}]({url}){tags}')
+content = '\n'.join(lines) if lines else '*暂无文章*'
 with open('README.md') as f:
     readme = f.read()
-
-replacement = f'<!-- BLOG-POST-LIST:START -->\n{blog_content}\n<!-- BLOG-POST-LIST:END -->'
-
-if '<!-- BLOG-POST-LIST:START -->' in readme:
-    new_readme = re.sub(
-        r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->',
-        replacement,
-        readme,
-        flags=re.DOTALL
-    )
-    with open('README.md', 'w') as f:
-        f.write(new_readme)
-    print("README.md updated successfully")
-else:
-    print("ERROR: BLOG-POST-LIST markers not found in README.md")
-    exit(1)
-PYEOF
-      - name: Commit changes
+new = re.sub(r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->',
+             f'<!-- BLOG-POST-LIST:START -->\\n{content}\\n<!-- BLOG-POST-LIST:END -->',
+             readme, flags=re.DOTALL)
+with open('README.md', 'w') as f:
+    f.write(new)
+print(f'Updated with {len(lines)} articles')
+"
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git diff --cached --quiet || git commit -m "Update blog posts"
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Update blog posts"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git push
