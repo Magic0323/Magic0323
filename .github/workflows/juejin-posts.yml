@@ -13,11 +13,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - shell: python3
-        run: |
-          print("python works")
-          import urllib.request
-          print("urllib works")
-          import json
-          print("json works")
-          print("all good")
+      - run: python3 -c "print('hello')"
+      - run: echo "done"
