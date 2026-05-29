@@ -13,7 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Test
-        run: echo "hello"
-      - name: Test2
-        run: echo "world"
+      - name: Fetch and update
+        run: |
+          curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" \
+            -H "Content-Type: application/json" \
+            -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' | \
+          python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+print(len(d['data']),'articles')
+"
