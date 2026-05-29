@@ -3,73 +3,53 @@ name: Update Blog Posts
 on:
   push:
     branches: [ main ]
-  schedule:
-    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Debug - test python and git
+        with:
+          persist-credentials: true
+      - name: Fetch posts and update README
         run: |
-          echo "=== Python test ==="
-          python3 --version
-          echo "=== Git test ==="
-          git config user.name "test"
-          git config user.email "test@test.com"
-          touch test.txt
-          git add test.txt
-          git commit -m "test commit" || true
-          git push || echo "PUSH FAILED"
-          echo "=== Done ==="
-      - name: Fetch posts
-        shell: python3
-        run: |
-          import urllib.request, json
-          url = "https://api.juejin.cn/content_api/v1/article/query_list"
-          data = json.dumps({"user_id":"1227480633975166","sort_type":2,"cursor":"0"}).encode()
-          req = urllib.request.Request(url, data=data, headers={"Content-Type":"application/json"})
-          try:
-              resp = urllib.request.urlopen(req, timeout=10)
-              print(f"HTTP {resp.status}")
-              with open('juejin.json', 'wb') as f:
-                  f.write(resp.read())
-              print("OK: fetched articles")
-          except Exception as e:
-              print(f"FAIL: {e}")
-              exit(1)
-      - name: Update text
-        shell: python3
-        run: |
-          import json, re
-          with open('juejin.json') as f:
-              apps = json.load(f).get('data', [])
-          print(f"Found {len(apps)} articles")
-          lines = []
-          for a in apps:
-              i = a['article_info']
-              lines.append(f"- [{i['title']}](https://juejin.cn/post/{i['article_id']})")
-          content = '\n'.join(lines) if lines else '*No articles yet*'
-          with open('README.md') as f:
-              readme = f.read()
-          new = re.sub(r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->',
-                       f'<!-- BLOG-POST-LIST:START -->\n{content}\n<!-- BLOG-POST-LIST:END -->',
-                       readme, flags=re.DOTALL)
-          with open('README.md', 'w') as f:
-              f.write(new)
-          print("README updated successfully")
+          # Fetch from Juejin
+          curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" \
+            -H "Content-Type: application/json" \
+            -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' \
+            -o juejin.json
+          # Update README
+          python3 << 'EOF'
+import json, re
+with open('juejin.json') as f:
+    apps = json.load(f).get('data', [])
+lines = []
+for a in apps:
+    i = a['article_info']
+    lines.append(f"- [{i['title']}](https://juejin.cn/post/{i['article_id']})")
+content = '\n'.join(lines) if lines else '*No articles*'
+with open('README.md') as f:
+    readme = f.read()
+new = re.sub(
+    r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->',
+    f'<!-- BLOG-POST-LIST:START -->\n{content}\n<!-- BLOG-POST-LIST:END -->',
+    readme, flags=re.DOTALL)
+with open('README.md', 'w') as f:
+    f.write(new)
+print(f'Updated: {len(lines)} articles')
+EOF
       - name: Commit and push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
-          if git diff --cached --quiet; then
-            echo "No changes to README"
-            exit 0
-          fi
+          git diff --cached --quiet && echo "No changes" && exit 0
           git commit -m "Update blog posts from Juejin"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
           git push
-          echo "Push successful"
+          echo "Done!"
