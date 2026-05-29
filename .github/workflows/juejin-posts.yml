@@ -13,16 +13,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Test Python
-        run: python3 --version && python3 -c "print('Python works')"
-      - name: Test curl
-        run: curl -s "https://api.juejin.cn/content_api/v1/article/query_list" -X POST -H "Content-Type: application/json" -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d['data']),'articles')"
-      - name: Test git push
-        run: |
-          git config user.name "bot"
-          git config user.email "bot@bot.com"
-          echo "update" > README.md
-          git add README.md
-          git commit -m "test"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git push
+      - run: echo "hello"
