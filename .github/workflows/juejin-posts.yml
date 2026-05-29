@@ -13,13 +13,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch and update
+      - name: Fetch articles
+        run: curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" -H "Content-Type: application/json" -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' -o juejin.json
+      - name: Update README
+        shell: python3
         run: |
-          curl -s -X POST "https://api.juejin.cn/content_api/v1/article/query_list" \
-            -H "Content-Type: application/json" \
-            -d '{"user_id":"1227480633975166","sort_type":2,"cursor":"0"}' | \
-          python3 -c "
-import json,sys
-d=json.load(sys.stdin)
-print(len(d['data']),'articles')
-"
+          import json, re
+          with open('juejin.json') as f:
+              data = json.load(f)
+          arts = data.get('data', [])
+          lines = []
+          for a in arts:
+              i = a['article_info']
+              lines.append(f"- [{i['title']}](https://juejin.cn/post/{i['article_id']})")
+          content = '\n'.join(lines) if lines else '*No articles*'
+          with open('README.md') as f:
+              readme = f.read()
+          new = re.sub(r'<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->', f'<!-- BLOG-POST-LIST:START -->\n{content}\n<!-- BLOG-POST-LIST:END -->', readme, flags=re.DOTALL)
+          with open('README.md', 'w') as f:
+              f.write(new)
+          print(f'Done: {len(arts)} articles')
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Update blog posts"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git push
