@@ -15,48 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Create update script
-        run: cat > update.py << 'ENDOFPYTHON'
-import urllib.request, json, re, sys
-
-req = urllib.request.Request(
-    "https://api.juejin.cn/content_api/v1/article/query_list",
-    data=json.dumps({"user_id":"1227480633975166","sort_type":2,"cursor":"0"}).encode(),
-    headers={"Content-Type":"application/json"})
-
-with urllib.request.urlopen(req) as r:
-    data = json.loads(r.read())
-
-arts = data.get("data", [])
-lines = []
-for a in arts:
-    i = a["article_info"]
-    lines.append("- [" + i["title"] + "](https://juejin.cn/post/" + i["article_id"] + ")")
-
-content = "\n".join(lines) if lines else "*No articles*"
-placeholder_start = "<!-- BLOG-POST-LIST:START -->"
-placeholder_end = "<!-- BLOG-POST-LIST:END -->"
-result = placeholder_start + "\n" + content + "\n" + placeholder_end
-
-with open("README.md") as f:
-    readme = f.read()
-
-new_readme = re.sub(
-    placeholder_start + ".*?" + placeholder_end,
-    result, readme, flags=re.DOTALL)
-
-with open("README.md", "w") as f:
-    f.write(new_readme)
-
-print("OK: " + str(len(arts)) + " articles updated")
-ENDOFPYTHON
-      - name: Run update
-        run: python3 update.py
-      - name: Commit
+      - name: Run update script
+        run: python3 scripts/update-blog.py
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md update.py
+          git add README.md
           git diff --cached --quiet && echo "No changes" && exit 0
           git commit -m "Update blog posts"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
