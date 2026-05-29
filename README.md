@@ -1,4 +1,4 @@
-# 👋 Hi, I'm 殷炜 (Magic0323)
+# 👋 Hi, I'm Magic0323
 
 <div align="center">
 
@@ -13,11 +13,11 @@
 
 ## 🧑‍💻 About Me
 
-> 25岁 · 中共党员 · 浙江理工大学科技与艺术学院 计算机科学与技术 本科
+> 浙江理工大学科技与艺术学院 计算机科学与技术 本科
 
 ```typescript
 const yinwei = {
-  name: '殷炜',
+  name: 'Magic0323',
   aka: 'Magic0323',
   title: 'Senior Frontend Engineer @ 数字马力',
   email: 'magic_yw2001@163.com',
@@ -150,12 +150,12 @@ const yinwei = {
 <div align="center">
   <p><i>"AI augments, but engineers create. The future belongs to those who build it."</i></p>
   
-  📧 <a href="mailto:magic_yw2001@163.com">magic_yw2001@163.com</a> &nbsp;·&nbsp; 📱 18668700323
+  📧 <a href="mailto:magic_yw2001@163.com">magic_yw2001@163.com</a>
   
   <br/>
   
   <a href="https://juejin.cn/user/1227480633975166"><img src="https://img.shields.io/badge/掘金-1E80FF?style=for-the-badge&logo=juejin&logoColor=white" /></a>
   
   <br/>
-  ⭐️ From **殷炜 (Magic0323)**
+  ⭐️ From **Magic0323**
 </div>
