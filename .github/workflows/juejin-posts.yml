@@ -3,6 +3,8 @@ name: Update Blog Posts
 on:
   push:
     branches: [ main ]
+  schedule:
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -13,5 +15,50 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: python3 -c "print('hello')"
-      - run: echo "done"
+      - name: Fetch articles
+        run: |
+          python3 << 'PYEOF'
+import urllib.request, json
+req = urllib.request.Request(
+    "https://api.juejin.cn/content_api/v1/article/query_list",
+    data=json.dumps({"user_id":"1227480633975166","sort_type":2,"cursor":"0"}).encode(),
+    headers={"Content-Type":"application/json"})
+with urllib.request.urlopen(req) as r:
+    with open("juejin.json", "wb") as f:
+        f.write(r.read())
+data = json.load(open("juejin.json"))
+print("OK:", len(data["data"]), "articles")
+PYEOF
+      - name: Update README
+        run: |
+          python3 << 'PYEOF'
+import json, re
+arts = json.load(open("juejin.json")).get("data", [])
+lines = []
+for a in arts:
+    i = a["article_info"]
+    lines.append("- [" + i["title"] + "](https://juejin.cn/post/" + i["article_id"] + ")")
+content = "\n".join(lines) if lines else "*No articles*"
+placeholder = "<!-- BLOG-POST-LIST:START -->"
+result = placeholder + "\n" + content + "\n" + "<!-- BLOG-POST-LIST:END -->"
+readme = open("README.md").read()
+if placeholder in readme:
+    import re as regex
+    new = regex.sub(
+        r"<!-- BLOG-POST-LIST:START -->.*?<!-- BLOG-POST-LIST:END -->",
+        result, readme, flags=regex.DOTALL)
+    open("README.md", "w").write(new)
+    print("OK:", len(lines), "articles")
+else:
+    print("ERR: marker not found")
+    exit(1)
+PYEOF
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Update blog posts"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git push
