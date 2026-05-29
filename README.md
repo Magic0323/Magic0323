@@ -135,7 +135,7 @@ const yinwei = {
 ## 📝 Latest Blog Posts
 
 <!-- BLOG-POST-LIST:START -->
-*Loading...*
+- [前端算法](https://juejin.cn/post/7305572311812325387)
 <!-- BLOG-POST-LIST:END -->
 
 ---
