@@ -135,6 +135,7 @@ const yinwei = {
 ## 📝 Latest Blog Posts
 
 <!-- BLOG-POST-LIST:START -->
+- [手把手教你用 Rust 构建 DeepSeek 远程桌面 Agent](https://juejin.cn/post/7646417715697172489)
 - [GitHub 个人主页从零到生产：一个前端工程师的 Profile README 折腾记](https://juejin.cn/post/7644928879685877769)
 - [前端算法](https://juejin.cn/post/7305572311812325387)
 <!-- BLOG-POST-LIST:END -->
